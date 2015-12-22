@@ -14,31 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.camel.dataformat.tarfile;
+package org.apache.camel.catalog;
 
-import java.io.InputStream;
+import org.junit.BeforeClass;
 
-import org.apache.camel.Exchange;
-import org.apache.camel.Expression;
-import org.apache.camel.Message;
+public class CamelCatalogCacheTest extends CamelCatalogTest {
 
-/**
- * TarSplitter the expression builder which can be used after the splitter
- * Based on the ZipSplitter from camel-zipfile component
- */
-public class TarSplitter implements Expression {
-
-    public TarSplitter() {
+    @BeforeClass
+    public static void createCamelCatalog() {
+        catalog = new DefaultCamelCatalog(true);
     }
 
-    public Object evaluate(Exchange exchange) {
-        Message inputMessage = exchange.getIn();
-        return new TarIterator(exchange, inputMessage.getBody(InputStream.class));
-    }
-
-    @Override
-    public <T> T evaluate(Exchange exchange, Class<T> type) {
-        Object result = evaluate(exchange);
-        return exchange.getContext().getTypeConverter().convertTo(type, exchange, result);
-    }
 }

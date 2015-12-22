@@ -20,15 +20,21 @@ import org.apache.camel.Consumer;
 import org.apache.camel.Processor;
 import org.apache.camel.Producer;
 import org.apache.camel.impl.DefaultEndpoint;
+import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.UriEndpoint;
-import org.apache.spark.api.java.AbstractJavaRDDLike;
+import org.apache.camel.spi.UriParam;
+import org.apache.camel.spi.UriPath;
+import org.apache.spark.api.java.JavaRDDLike;
 import org.apache.spark.sql.DataFrame;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.spi.LoggerFactoryBinder;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+/**
+ * Spark endpoint can be used to create various type of producers, including RDD-, DataFrame- and Hive-based.
+ */
+@UriEndpoint(scheme = "spark", title = "Apache Spark", syntax = "spark:endpointType",
+        producerOnly = true, label = "bigdata,iot")
 public class SparkEndpoint extends DefaultEndpoint {
 
     // Logger
@@ -37,18 +43,20 @@ public class SparkEndpoint extends DefaultEndpoint {
 
     // Endpoint collaborators
 
-    private AbstractJavaRDDLike rdd;
-
+    @UriPath @Metadata(required = "true")
+    private EndpointType endpointType;
+    @UriParam
+    private JavaRDDLike rdd;
+    @UriParam
     private RddCallback rddCallback;
-
+    @UriParam
     private DataFrame dataFrame;
-
+    @UriParam
     private DataFrameCallback dataFrameCallback;
 
     // Endpoint configuration
 
-    private final EndpointType endpointType;
-
+    @UriParam(defaultValue = "true")
     private boolean collect = true;
 
     // Constructors
@@ -76,12 +84,15 @@ public class SparkEndpoint extends DefaultEndpoint {
 
     @Override
     public Producer createProducer() throws Exception {
-        LOG.debug("Creating {} Spark producer.", endpointType);
+        LOG.trace("Creating {} Spark producer.", endpointType);
         if (endpointType == EndpointType.rdd) {
+            LOG.trace("About to create RDD producer.");
             return new RddSparkProducer(this);
         } else if (endpointType == EndpointType.dataframe) {
+            LOG.trace("About to create DataFrame producer.");
             return new DataFrameSparkProducer(this);
         } else {
+            LOG.trace("About to create Hive producer.");
             return new HiveSparkProducer(this);
         }
     }
@@ -98,17 +109,30 @@ public class SparkEndpoint extends DefaultEndpoint {
 
     // Setters & getters
 
-
     @Override
     public SparkComponent getComponent() {
         return (SparkComponent) super.getComponent();
     }
 
-    public AbstractJavaRDDLike getRdd() {
+    public EndpointType getEndpointType() {
+        return endpointType;
+    }
+
+    /**
+     * Type of the endpoint (rdd, dataframe, hive).
+     */
+    public void setEndpointType(EndpointType endpointType) {
+        this.endpointType = endpointType;
+    }
+
+    public JavaRDDLike getRdd() {
         return rdd;
     }
 
-    public void setRdd(AbstractJavaRDDLike rdd) {
+    /**
+     * RDD to compute against.
+     */
+    public void setRdd(JavaRDDLike rdd) {
         this.rdd = rdd;
     }
 
@@ -116,6 +140,9 @@ public class SparkEndpoint extends DefaultEndpoint {
         return rddCallback;
     }
 
+    /**
+     * Function performing action against an RDD.
+     */
     public void setRddCallback(RddCallback rddCallback) {
         this.rddCallback = rddCallback;
     }
@@ -124,6 +151,9 @@ public class SparkEndpoint extends DefaultEndpoint {
         return dataFrame;
     }
 
+    /**
+     * DataFrame to compute against.
+     */
     public void setDataFrame(DataFrame dataFrame) {
         this.dataFrame = dataFrame;
     }
@@ -132,6 +162,9 @@ public class SparkEndpoint extends DefaultEndpoint {
         return dataFrameCallback;
     }
 
+    /**
+     * Function performing action against an DataFrame.
+     */
     public void setDataFrameCallback(DataFrameCallback dataFrameCallback) {
         this.dataFrameCallback = dataFrameCallback;
     }
@@ -140,6 +173,9 @@ public class SparkEndpoint extends DefaultEndpoint {
         return collect;
     }
 
+    /**
+     * Indicates if results should be collected or counted.
+     */
     public void setCollect(boolean collect) {
         this.collect = collect;
     }
